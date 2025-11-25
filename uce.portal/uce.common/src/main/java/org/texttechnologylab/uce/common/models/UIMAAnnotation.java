@@ -7,6 +7,8 @@ import org.texttechnologylab.uce.common.models.corpus.emotion.Emotion;
 import org.texttechnologylab.uce.common.models.corpus.links.AnnotationLink;
 import org.texttechnologylab.uce.common.models.corpus.links.AnnotationToDocumentLink;
 import org.texttechnologylab.uce.common.models.corpus.links.DocumentToAnnotationLink;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Comment;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.SpeechText;
 import org.texttechnologylab.uce.common.models.negation.*;
 import org.texttechnologylab.uce.common.models.topic.UnifiedTopic;
 import org.texttechnologylab.uce.common.utils.StringUtils;
@@ -407,6 +409,22 @@ public class UIMAAnnotation extends ModelBase implements Linkable {
             return String.format(
                     "<span class='open-wiki-page annotation custom-context-menu topic colorable-topic' title='%1$s' data-wid='%2$s' data-wcovered='%3$s' data-topic-value='%4$s'>",
                     includeTitle ? repTopicValue : "", topic.getWikiId(), topic.getCoveredText(), repTopicValue);
+        } else if (annotation instanceof SpeechText speechText) {
+            var speakerInfo = "Speech";
+            if (speechText.getSpeaker() != null) {
+                var speaker = speechText.getSpeaker();
+                speakerInfo = speaker.getFullName() != null ? speaker.getFullName() : "Unknown Speaker";
+                if (speaker.getGroup() != null && !speaker.getGroup().isEmpty()) {
+                    speakerInfo += " (" + speaker.getGroup() + ")";
+                }
+            }
+            return String.format(
+                    "<span class='annotation custom-context-menu speechtext' title='%1$s'>",
+                    includeTitle ? speakerInfo : "");
+        } else if (annotation instanceof Comment) {
+            return String.format(
+                    "<span class='annotation custom-context-menu parliamentary-comment' title='%1$s'>",
+                    includeTitle ? "Parliamentary Comment" : "");
         }
 
         return "";

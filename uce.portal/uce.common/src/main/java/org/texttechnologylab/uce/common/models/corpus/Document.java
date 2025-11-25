@@ -20,6 +20,9 @@ import org.texttechnologylab.uce.common.models.corpus.emotion.Emotion;
 import org.texttechnologylab.uce.common.models.corpus.links.AnnotationToDocumentLink;
 import org.texttechnologylab.uce.common.models.corpus.links.DocumentLink;
 import org.texttechnologylab.uce.common.models.corpus.links.DocumentToAnnotationLink;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Comment;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Speaker;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.SpeechText;
 import org.texttechnologylab.uce.common.models.negation.*;
 import org.texttechnologylab.uce.common.models.topic.TopicValueBase;
 import org.texttechnologylab.uce.common.models.topic.TopicValueBaseWithScore;
@@ -234,6 +237,21 @@ public class Document extends ModelBase implements WikiModel, Linkable {
     @JoinColumn(name = "document_Id")
     private List<Image> images;
 
+    @Setter
+    @Getter
+    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Speaker> speakers = new ArrayList<>();
+
+    @Setter
+    @Getter
+    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SpeechText> speechTexts = new ArrayList<>();
+
+    @Setter
+    @Getter
+    @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> parliamentaryComments = new ArrayList<>();
+
     public Document() {
         metadataTitleInfo = new MetadataTitleInfo();
     }
@@ -411,6 +429,9 @@ public class Document extends ModelBase implements WikiModel, Linkable {
         // unifiedTopics
         annotations.addAll(unifiedTopics.stream().filter(a -> a.getBegin() >= pagesBegin && a.getEnd() <= pagesEnd).toList());
         annotations.addAll(images.stream().filter(a -> a.getBegin() >= pagesBegin && a.getEnd() <= pagesEnd).toList());
+        //parliamentary
+        annotations.addAll(speechTexts.stream().filter(a -> a.getBegin() >= pagesBegin && a.getEnd() <= pagesEnd).toList());
+        annotations.addAll(parliamentaryComments.stream().filter(a -> a.getBegin() >= pagesBegin && a.getEnd() <= pagesEnd).toList());
 
         annotations.sort(Comparator.comparingInt(UIMAAnnotation::getBegin));
         return annotations;

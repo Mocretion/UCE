@@ -24,6 +24,7 @@ public class CorpusAnnotationConfig {
     private boolean time;
     private boolean wikipediaLink;
     private boolean image;
+    private ParliamentaryConfig parliamentary;
     // negation annos
     private boolean completeNegation;
     private boolean cue;

@@ -2233,6 +2233,14 @@ public class PostgresqlDataInterface_Impl implements DataInterface {
             Hibernate.initialize(link.getWikiDataHyponyms());
         }
 
+        // parliamentary
+        Hibernate.initialize(doc.getSpeakers());
+        Hibernate.initialize(doc.getSpeechTexts());
+        Hibernate.initialize(doc.getParliamentaryComments());
+        for (var speechText : doc.getSpeechTexts()) {
+            Hibernate.initialize(speechText.getSpeaker());
+        }
+
         return doc;
     }
 

@@ -15,6 +15,9 @@ import org.texttechnologylab.uce.common.models.corpus.links.AnnotationLink;
 import org.texttechnologylab.uce.common.models.corpus.links.AnnotationToDocumentLink;
 import org.texttechnologylab.uce.common.models.corpus.links.DocumentLink;
 import org.texttechnologylab.uce.common.models.corpus.links.DocumentToAnnotationLink;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Comment;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Speaker;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.SpeechText;
 import org.texttechnologylab.uce.common.models.gbif.GbifOccurrence;
 import org.texttechnologylab.uce.common.models.imp.ImportLog;
 import org.texttechnologylab.uce.common.models.imp.UCEImport;
@@ -88,6 +91,11 @@ public class HibernateConf {
         metadataSources.addAnnotatedClass(TopicValueBaseWithScore.class);
 
         metadataSources.addAnnotatedClass(DocumentTopThreeTopics.class);
+
+        //parliamentary
+        metadataSources.addAnnotatedClass(Speaker.class);
+        metadataSources.addAnnotatedClass(SpeechText.class);
+        metadataSources.addAnnotatedClass(Comment.class);
         var metadata = metadataSources.buildMetadata();
 
         return metadata.getSessionFactoryBuilder().build();

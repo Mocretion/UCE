@@ -48,6 +48,9 @@ import org.texttechnologylab.uce.common.models.corpus.links.DocumentToAnnotation
 import org.texttechnologylab.uce.common.models.corpus.ocr.OCRPageAdapterImpl;
 import org.texttechnologylab.uce.common.models.corpus.ocr.PageAdapter;
 import org.texttechnologylab.uce.common.models.corpus.ocr.PageAdapterImpl;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Comment;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.Speaker;
+import org.texttechnologylab.uce.common.models.corpus.parliamentary.SpeechText;
 import org.texttechnologylab.uce.common.models.imp.ImportLog;
 import org.texttechnologylab.uce.common.models.imp.ImportStatus;
 import org.texttechnologylab.uce.common.models.imp.LogStatus;
@@ -657,6 +660,26 @@ public class Importer {
                 ExceptionUtils.tryCatchLog(
                         () -> setImages(document, jCas),
                         (ex) -> logImportWarn("This file should have contained image annotations, but selecting them caused an error.", ex, filePath));
+
+            var parliamentaryConfig = corpusConfig.getAnnotations().getParliamentary();
+            if (parliamentaryConfig != null && parliamentaryConfig.isAnnotated()) {
+
+                // IMPORTANT: Process speakers FIRST, as SpeechText references them
+                if (parliamentaryConfig.isSpeaker())
+                    ExceptionUtils.tryCatchLog(
+                            () -> setParliamentarySpeakers(document, jCas),
+                            (ex) -> logImportWarn("This file should have contained parliamentary Speaker annotations, but selecting them caused an error.", ex, filePath));
+
+                if (parliamentaryConfig.isSpeechText())
+                    ExceptionUtils.tryCatchLog(
+                            () -> setParliamentarySpeechTexts(document, jCas),
+                            (ex) -> logImportWarn("This file should have contained parliamentary SpeechText annotations, but selecting them caused an error.", ex, filePath));
+
+                if (parliamentaryConfig.isComment())
+                    ExceptionUtils.tryCatchLog(
+                            () -> setParliamentaryComments(document, jCas),
+                            (ex) -> logImportWarn("This file should have contained parliamentary Comment annotations, but selecting them caused an error.", ex, filePath));
+            }
 
             var duration = System.currentTimeMillis() - start;
             logImportInfo("Successfully extracted all annotations from " + filePath, LogStatus.FINISHED, filePath, duration);
@@ -1636,6 +1659,86 @@ public class Importer {
         });
 
         document.setUnifiedTopics(unifiedTopics);
+    }
+
+    /**
+     * Selects and sets parliamentary speakers to a document.
+     * Speakers are document-level metadata (AnnotationBase, no begin/end offsets).
+     */
+    private void setParliamentarySpeakers(Document document, JCas jCas) {
+        var speakers = new ArrayList<Speaker>();
+
+        JCasUtil.select(jCas, org.texttechnologylab.annotation.parliamentary.Speaker.class).forEach(s -> {
+            var speaker = new Speaker();
+            speaker.setDocument(document);
+            speaker.setSpeakerId(s.getId());
+            speaker.setFirstName(s.getFirstName());
+            speaker.setLastName(s.getLastName());
+            speaker.setGroup(s.getGroup());
+            speaker.setRole(s.getRole());
+
+            speakers.add(speaker);
+        });
+
+        document.setSpeakers(speakers);
+        logger.info("Setting parliamentary Speakers done. Count: " + speakers.size());
+    }
+
+    /**
+     * Selects and sets parliamentary speech text segments to a document.
+     * Links each SpeechText to its Speaker by matching the UIMA reference.
+     */
+    private void setParliamentarySpeechTexts(Document document, JCas jCas) {
+        var speechTexts = new ArrayList<SpeechText>();
+
+        // Build a map from UIMA Speaker to UCE Speaker for linking
+        // We match by speakerId since that's the unique identifier
+        var speakerMap = new HashMap<String, Speaker>();
+        if (document.getSpeakers() != null) {
+            for (var speaker : document.getSpeakers()) {
+                if (speaker.getSpeakerId() != null) {
+                    speakerMap.put(speaker.getSpeakerId(), speaker);
+                }
+            }
+        }
+
+        JCasUtil.select(jCas, org.texttechnologylab.annotation.parliamentary.SpeechText.class).forEach(st -> {
+            var speechText = new SpeechText(st.getBegin(), st.getEnd());
+            speechText.setDocument(document);
+            speechText.setCoveredText(st.getCoveredText());
+
+            // Link to speaker if available
+            var uimaSpeaker = st.getSpeaker();
+            if (uimaSpeaker != null && uimaSpeaker.getId() != null) {
+                var speaker = speakerMap.get(uimaSpeaker.getId());
+                if (speaker != null) {
+                    speechText.setSpeaker(speaker);
+                }
+            }
+
+            speechTexts.add(speechText);
+        });
+
+        document.setSpeechTexts(speechTexts);
+        logger.info("Setting parliamentary SpeechTexts done. Count: " + speechTexts.size());
+    }
+
+    /**
+     * Selects and sets parliamentary comments (applause, interjections, etc.) to a document.
+     */
+    private void setParliamentaryComments(Document document, JCas jCas) {
+        var comments = new ArrayList<Comment>();
+
+        JCasUtil.select(jCas, org.texttechnologylab.annotation.parliamentary.Comment.class).forEach(c -> {
+            var comment = new Comment(c.getBegin(), c.getEnd());
+            comment.setDocument(document);
+            comment.setCoveredText(c.getCoveredText());
+
+            comments.add(comment);
+        });
+
+        document.setParliamentaryComments(comments);
+        logger.info("Setting parliamentary Comments done. Count: " + comments.size());
     }
 
     /**

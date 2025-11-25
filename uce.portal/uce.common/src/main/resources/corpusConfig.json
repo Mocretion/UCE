@@ -32,7 +32,12 @@
     "focus": false,
     "scope": false,
     "xscope": false,
-    "unifiedTopic": false
+    "unifiedTopic": false,
+    "parliamentary": {
+      "speaker": false,
+      "speechText": false,
+      "comment": false
+    }
   },
   "other": {
     "//comment": "[Is this corpus also available on https://sammlungen.ub.uni-frankfurt.de/? Either true or false]",
